@@ -1,3 +1,4 @@
+```bash
 simulator/
 ├── include/
 │   ├── types.hpp          # All struct definitions
@@ -10,3 +11,4 @@ simulator/
 │   ├── utils.cpp          # Utility implementations
 │   └── main.cpp           # Main program
 └── Makefile or CMakeLists.txt
+```

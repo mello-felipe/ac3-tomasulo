@@ -14,7 +14,7 @@ public:
     std::map<std::string, UnidadeFuncional> unidadesFuncionais;
     std::map<std::string, UnidadeFuncionalMemoria> unidadesFuncionaisMemoria;
     int clock_cycle;
-    std::map<std::string, std::optional<std::string>> estacaoRegistradores;
+    std::map<std::string, std::optional<std::string>> estacaoRegistradores; // para qual estação os registradores estão apontando?
 
     Estado(const ConfigSimulador& cfg, const std::vector<InstrucaoInput>& instrucoes_input); // inicialização das instruções, registradores e unidades funcionais
 
@@ -34,7 +34,7 @@ public:
 
     void escreveEstacaoRegistrador(const InstrucaoDetalhes& instr_details, const std::string& ufNome); // informa ao registrador final qual unidade funcional irá lhe entregar o resultado da operação
 
-    void liberaUFEsperandoResultado(const std::string& nomeUFQueTerminou); // libera dependeências que estavam esperando a liberação da unidade funcional
+    void liberaUFEsperandoResultado(const std::string& nomeUFQueTerminou); // libera dependeências que estavam esperando a liberação da unidade funcional(CDB)
 
     void desalocaUFMem(UnidadeFuncionalMemoria& uf_mem); // limpeza das instruções e mudança dos status da unidades funcionais
 

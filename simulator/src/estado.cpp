@@ -368,7 +368,7 @@ void Estado::executaInstrucao() { //verifica se a unidade funcional não tem dep
     }
 }
 
-void Estado::escreveInstrucao() { //registra o resultado da instrução em seu registrador de destino
+void Estado:: escreveInstrucao() { //registra o resultado da instrução em seu registrador de destino
     for (auto& pair : unidadesFuncionaisMemoria) {
         UnidadeFuncionalMemoria& uf_mem = pair.second;
         if (uf_mem.ocupado && uf_mem.tempo.has_value() && uf_mem.tempo.value() == -1 &&
@@ -416,7 +416,7 @@ void Estado::escreveInstrucao() { //registra o resultado da instrução em seu r
     }
 }
 
-bool Estado::executa_ciclo() { //exxecuta um ciclo completo
+bool Estado::executa_ciclo() { //executa um ciclo completo
     clock_cycle++;
     issueNovaInstrucao();
     executaInstrucao();

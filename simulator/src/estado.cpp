@@ -368,7 +368,7 @@ void Estado::executaInstrucao() { //verifica se a unidade funcional não tem dep
     }
 }
 
-void Estado:: escreveInstrucao() { //registra o resultado da instrução em seu registrador de destino
+void Estado::escreveInstrucao() { //registra o resultado da instrução em seu registrador de destino
     for (auto& pair : unidadesFuncionaisMemoria) {
         UnidadeFuncionalMemoria& uf_mem = pair.second;
         if (uf_mem.ocupado && uf_mem.tempo.has_value() && uf_mem.tempo.value() == -1 &&
@@ -416,7 +416,7 @@ void Estado:: escreveInstrucao() { //registra o resultado da instrução em seu 
     }
 }
 
-bool Estado::executa_ciclo() { //executa um ciclo completo
+bool Estado::executa_ciclo() { //exxecuta um ciclo completo
     clock_cycle++;
     issueNovaInstrucao();
     executaInstrucao();
@@ -425,77 +425,176 @@ bool Estado::executa_ciclo() { //executa um ciclo completo
 }
 
 void Estado::printEstadoDebug() const { //imprime o estado das instruções, unidades funcionais, memória e registradores
-    std::cout << "\n--- Clock: " << clock_cycle << " ---" << std::endl;
-    std::cout << "\n== Status das Instrucoes ==" << std::endl;
-    std::cout << std::left << std::setw(5) << "#"
-              << std::setw(8) << "Instr"
-              << std::setw(5) << "R"
-              << std::setw(8) << "S"
-              << std::setw(8) << "T"
-              << std::setw(7) << "Issue"
-              << std::setw(7) << "Exec"
-              << std::setw(7) << "Write"
-              << std::setw(6) << "Busy" << std::endl;
+    // Cabeçalho com estatísticas
+    std::cout << "\n" << std::string(100, '=') << std::endl;
+    std::cout << "  CLOCK CYCLE: " << clock_cycle;
+    
+    // Calcular estatísticas
+    int emitidas = 0, executando = 0, completas = 0;
     for (const auto& s : estadoInstrucoes) {
-        std::cout << std::left << std::setw(5) << s.posicao
-                  << std::setw(8) << s.instrucao.operacao
-                  << std::setw(5) << s.instrucao.registradorR
-                  << std::setw(8) << s.instrucao.registradorS
-                  << std::setw(8) << s.instrucao.registradorT
-                  << std::setw(7) << (s.issue.has_value() ? std::to_string(s.issue.value()) : "-")
-                  << std::setw(7) << (s.exeCompleta.has_value() ? std::to_string(s.exeCompleta.value()) : "-")
-                  << std::setw(7) << (s.write.has_value() ? std::to_string(s.write.value()) : "-")
-                  << std::setw(6) << (s.busy ? "Sim" : "Nao") << std::endl;
+        if (s.write.has_value()) {
+            completas++;
+        } else if (s.busy) {
+            executando++;
+        } else if (s.issue.has_value()) {
+            emitidas++;
+        }
     }
-
-    std::cout << "\n== Estacoes de Reserva (Aritmeticas/Inteiro) ==" << std::endl;
-    std::cout << std::left << std::setw(10) << "Nome"
-              << std::setw(8) << "Ocupado"
-              << std::setw(7) << "Tempo"
-              << std::setw(10) << "Op"
-              << std::setw(12) << "Vj"
-              << std::setw(12) << "Vk"
-              << std::setw(10) << "Qj"
-              << std::setw(10) << "Qk" << std::endl;
+    
+    std::cout << "  |  Emitidas: " << emitidas 
+              << "  |  Executando: " << executando 
+              << "  |  Completas: " << completas << " / " << estadoInstrucoes.size() << std::endl;
+    std::cout << std::string(100, '=') << std::endl;
+    
+    // ========== TABELA 1: Status das Instruções ==========
+    std::cout << "\n[ STATUS DAS INSTRUCOES ]" << std::endl;
+    std::cout << std::string(100, '-') << std::endl;
+    std::cout << std::left 
+              << std::setw(6) << "ID"
+              << std::setw(10) << "Operacao"
+              << std::setw(8) << "Dest"
+              << std::setw(10) << "Op1"
+              << std::setw(10) << "Op2"
+              << std::setw(8) << "Issue"
+              << std::setw(8) << "Exec"
+              << std::setw(8) << "Write"
+              << std::setw(10) << "Busy" << std::endl;
+    std::cout << std::string(100, '-') << std::endl;
+    
+    for (const auto& s : estadoInstrucoes) {
+        std::cout << std::left 
+                  << std::setw(6) << s.posicao
+                  << std::setw(10) << s.instrucao.operacao
+                  << std::setw(8) << (s.instrucao.registradorR.empty() ? "---" : s.instrucao.registradorR)
+                  << std::setw(10) << (s.instrucao.registradorS.empty() ? "---" : s.instrucao.registradorS)
+                  << std::setw(10) << (s.instrucao.registradorT.empty() ? "---" : s.instrucao.registradorT)
+                  << std::setw(8) << (s.issue.has_value() ? std::to_string(s.issue.value()) : "---")
+                  << std::setw(8) << (s.exeCompleta.has_value() ? std::to_string(s.exeCompleta.value()) : "---")
+                  << std::setw(8) << (s.write.has_value() ? std::to_string(s.write.value()) : "---")
+                  << std::setw(10) << (s.busy ? "[EXEC]" : "[ --- ]") << std::endl;
+    }
+    std::cout << std::string(100, '-') << std::endl;
+    
+    // ========== TABELA 2: Estações de Reserva (Aritmética/Inteiro) ==========
+    std::cout << "\n[ ESTACOES DE RESERVA - Aritmetica/Inteiro ]" << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    std::cout << std::left 
+              << std::setw(12) << "Unidade"
+              << std::setw(12) << "Status"
+              << std::setw(8) << "Tempo"
+              << std::setw(10) << "Operacao"
+              << std::setw(14) << "Vj"
+              << std::setw(14) << "Vk"
+              << std::setw(12) << "Qj"
+              << std::setw(12) << "Qk" << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    
     for (const auto& pair : unidadesFuncionais) {
         const auto& uf = pair.second;
-        std::cout << std::left << std::setw(10) << uf.nome
-                  << std::setw(8) << (uf.ocupado ? "Sim" : "Nao")
-                  << std::setw(7) << (uf.tempo.has_value() ? std::to_string(uf.tempo.value()) : "-")
-                  << std::setw(10) << (uf.operacao.has_value() ? uf.operacao.value() : "-")
-                  << std::setw(12) << (uf.vj.has_value() ? uf.vj.value() : "-")
-                  << std::setw(12) << (uf.vk.has_value() ? uf.vk.value() : "-")
-                  << std::setw(10) << (uf.qj.has_value() ? uf.qj.value() : "-")
-                  << std::setw(10) << (uf.qk.has_value() ? uf.qk.value() : "-") << std::endl;
+        std::string status = uf.ocupado ? "[OCUPADO]" : "[ LIVRE  ]";
+        
+        std::cout << std::left 
+                  << std::setw(12) << uf.nome
+                  << std::setw(12) << status
+                  << std::setw(8) << (uf.tempo.has_value() ? std::to_string(uf.tempo.value()) : "---")
+                  << std::setw(10) << (uf.operacao.has_value() ? uf.operacao.value() : "---")
+                  << std::setw(14) << (uf.vj.has_value() ? uf.vj.value() : "---")
+                  << std::setw(14) << (uf.vk.has_value() ? uf.vk.value() : "---")
+                  << std::setw(12) << (uf.qj.has_value() ? uf.qj.value() : "---")
+                  << std::setw(12) << (uf.qk.has_value() ? uf.qk.value() : "---") << std::endl;
     }
-
-    std::cout << "\n== Buffers de Load/Store (Memoria) ==" << std::endl;
-    std::cout << std::left << std::setw(10) << "Nome"
-              << std::setw(8) << "Ocupado"
-              << std::setw(7) << "Tempo"
-              << std::setw(8) << "Op"
-              << std::setw(15) << "Endereco"
-              << std::setw(10) << "Dest/Src"
-              << std::setw(10) << "Qi"
-              << std::setw(10) << "Qj (Base)" << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    
+    // ========== TABELA 3: Buffers de Load/Store ==========
+    std::cout << "\n[ BUFFERS DE LOAD/STORE ]" << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    std::cout << std::left 
+              << std::setw(12) << "Buffer"
+              << std::setw(12) << "Status"
+              << std::setw(8) << "Tempo"
+              << std::setw(10) << "Op"
+              << std::setw(18) << "Endereco"
+              << std::setw(12) << "Reg"
+              << std::setw(12) << "Qi"
+              << std::setw(12) << "Qj (Base)" << std::endl;
+    std::cout << std::string(110, '-') << std::endl;
+    
     for (const auto& pair : unidadesFuncionaisMemoria) {
         const auto& uf = pair.second;
-        std::cout << std::left << std::setw(10) << uf.nome
-                  << std::setw(8) << (uf.ocupado ? "Sim" : "Nao")
-                  << std::setw(7) << (uf.tempo.has_value() ? std::to_string(uf.tempo.value()) : "-")
-                  << std::setw(8) << (uf.operacao.has_value() ? uf.operacao.value() : "-")
-                  << std::setw(15) << (uf.endereco.has_value() ? uf.endereco.value() : "-")
-                  << std::setw(10) << (uf.destino.has_value() ? uf.destino.value() : "-")
-                  << std::setw(10) << (uf.qi.has_value() ? uf.qi.value() : "-")
-                  << std::setw(10) << (uf.qj.has_value() ? uf.qj.value() : "-") << std::endl;
+        std::string status = uf.ocupado ? "[OCUPADO]" : "[ LIVRE  ]";
+        
+        std::cout << std::left 
+                  << std::setw(12) << uf.nome
+                  << std::setw(12) << status
+                  << std::setw(8) << (uf.tempo.has_value() ? std::to_string(uf.tempo.value()) : "---")
+                  << std::setw(10) << (uf.operacao.has_value() ? uf.operacao.value() : "---")
+                  << std::setw(18) << (uf.endereco.has_value() ? uf.endereco.value() : "---")
+                  << std::setw(12) << (uf.destino.has_value() ? uf.destino.value() : "---")
+                  << std::setw(12) << (uf.qi.has_value() ? uf.qi.value() : "---")
+                  << std::setw(12) << (uf.qj.has_value() ? uf.qj.value() : "---") << std::endl;
     }
-
-    std::cout << "\n== Status dos Registradores ==" << std::endl;
-    bool first_reg = true;
-    for (const auto& pair : estacaoRegistradores) {
-        if (!first_reg) std::cout << ", ";
-        std::cout << pair.first << ":" << (pair.second.has_value() ? pair.second.value() : "null");
-        first_reg = false;
+    std::cout << std::string(110, '-') << std::endl;
+    
+    // TABELA 4: Status dos Registradores (Grid Visual) 
+    std::cout << "\n[ STATUS DOS REGISTRADORES ]" << std::endl;
+    std::cout << std::string(100, '=') << std::endl;
+    
+    // Registradores Float (F0-F30, apenas pares)
+    std::cout << "FLOAT (F0-F30):" << std::endl;
+    std::cout << std::string(100, '-') << std::endl;
+    
+    int count = 0;
+    for (int i = 0; i < 32; i += 2) {
+        std::string reg_name = "F" + std::to_string(i);
+        if (estacaoRegistradores.find(reg_name) != estacaoRegistradores.end()) {
+            std::string valor = estacaoRegistradores.at(reg_name).has_value() 
+                                ? estacaoRegistradores.at(reg_name).value() 
+                                : "init";
+            
+            // Trunca valores muito longos para caber no grid
+            if (valor.length() > 10) valor = valor.substr(0, 10);
+            
+            std::cout << std::setw(4) << std::right << reg_name << ": " 
+                      << std::setw(12) << std::left << valor;
+            
+            count++;
+            if (count % 5 == 0) {
+                std::cout << std::endl;
+            } else {
+                std::cout << " | ";
+            }
+        }
     }
-    std::cout << "\n-----------------------------------------" << std::endl;
+    if (count % 5 != 0) std::cout << std::endl;
+    
+    std::cout << std::string(100, '-') << std::endl;
+    
+    // Registradores Integer (R0-R31)
+    std::cout << "INTEGER (R0-R31):" << std::endl;
+    std::cout << std::string(100, '-') << std::endl;
+    
+    count = 0;
+    for (int i = 0; i < 32; i++) {
+        std::string reg_name = "R" + std::to_string(i);
+        if (estacaoRegistradores.find(reg_name) != estacaoRegistradores.end()) {
+            std::string valor = estacaoRegistradores.at(reg_name).has_value() 
+                                ? estacaoRegistradores.at(reg_name).value() 
+                                : "init";
+            
+            if (valor.length() > 10) valor = valor.substr(0, 10);
+            
+            std::cout << std::setw(4) << std::right << reg_name << ": " 
+                      << std::setw(12) << std::left << valor;
+            
+            count++;
+            if (count % 5 == 0) {
+                std::cout << std::endl;
+            } else {
+                std::cout << " | ";
+            }
+        }
+    }
+    if (count % 5 != 0) std::cout << std::endl;
+    
+    std::cout << std::string(100, '=') << std::endl;
 }
